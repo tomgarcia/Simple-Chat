@@ -71,7 +71,10 @@ class _Sender(threading.Thread):
 					msg = self.msgList.pop(0)
 				else:
 					continue
-			msgString = 'type=' + msg['type'] + '\1Busername=' + msg['username'] + '\1Btext=' + msg['text']
+			msgString = 'type=' + msg['type']
+			for key in msg.keys():
+				if key != 'type':
+					msgString += '\1B' + key + '=' + msg[key]
 			try:
 				self.sock.send(msgString)
 			except:
