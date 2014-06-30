@@ -10,6 +10,7 @@ class Client:
 		self.uname = uname
 	def run(self):
 		self.conn.connect(self.serverAddress)
+		self.conn.send({'type': 'login', 'username': self.uname, 'time': time.asctime(time.gmtime())})
 		printThread = threading.Thread(target = self.printMsg)
 		printThread.start()
 		while True:
@@ -23,7 +24,10 @@ class Client:
 				secs = calendar.timegm(timeStruct)
 				localtime = time.localtime(secs)
 				ltimeString = time.strftime('[%I:%M %p] ', localtime)
-				print ltimeString + msg['username'] + ' -- ' + msg['text']
+				if msg['type'] == 'notification' or msg['type'] == 'loginmsg':
+					print ltimeString + msg['text']
+				elif msg['type'] == 'message':
+					print ltimeString + msg['username'] + ' -- ' + msg['text']
 
 address = raw_input('Enter server address ')
 port = int(raw_input('Enter port # '))
