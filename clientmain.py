@@ -11,5 +11,9 @@ model.start()
 view.start()
 
 while True:
-	msg = {'type': 'message',  'username': model.uname, 'text': raw_input(), 'time': time.asctime(time.gmtime())}
+	#textbox = view.textbox
+	#msg = {'type': 'message',  'username': model.uname, 'text': textbox.edit(), 'time': time.asctime(time.gmtime())}
+	msg = {'type': 'message',  'username': model.uname, 'text': raw_input(),  'time': time.asctime(time.gmtime())}
+	view.textwin.clear()
+	view.scr.refresh()
 	model.conn.send(msg)

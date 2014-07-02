@@ -4,15 +4,25 @@ import calendar
 import threading
 
 class Server(threading.Thread):
-	def __init__(self, conn):
+	def __init__(self, conn, acceptor):
 		threading.Thread.__init__(self)
 		self.client = conn
+		self.acceptor = acceptor
 		self.uname = ''
 		self.connList = []
 		self.connLock = threading.Lock()
 	def run(self):
+		socketClosed = False
 		while True:
 			msg = self.client.recv()
+			if msg is None:
+				with self.acceptor.serverListLock:
+					self.acceptor.serverList.remove(self)
+					for s in self.acceptor.serverList:
+						with s.connLock:
+							s.connList.remove(self.client)
+				msg = {'type': 'loginmsg', 'username': uname, 'text': uname + ' left the chat', 'time': time.asctime(time.gmtime())} 
+				socketClosed = True
 			if msg['type'] == 'login':
 				uname = msg['username']
 				self.client.send({'type': 'notification', 'user': uname, 'text': 'Welcome to the chat, ' + uname, 'time': time.asctime(time.gmtime())}) 
@@ -24,3 +34,5 @@ class Server(threading.Thread):
 				with self.connLock:
 					for conn in self.connList:
 						conn.send(msg)
+			if socketClosed:
+				return

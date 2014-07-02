@@ -10,17 +10,19 @@ class Acceptor(threading.Thread):
 		self.conn.bind(('', port))
 		self.conn.listen(10)
 		self.serverList = []
+		self.serverListLock = threading.Lock()
 	def run(self):
 		while True:
 			(sock, address) = self.conn.accept()
 			conn = connection.Connection(sock)
-			serverRunner = server.Server(conn)
-			for s in self.serverList:
-				with serverRunner.connLock:
-					serverRunner.connList.append(s.client)
-				with s.connLock:
-					s.connList.append(serverRunner.client)
-			self.serverList.append(serverRunner)
+			serverRunner = server.Server(conn, self)
+			with self.serverListLock:
+				for s in self.serverList:
+					with serverRunner.connLock:
+						serverRunner.connList.append(s.client)
+					with s.connLock:
+						s.connList.append(serverRunner.client)
+				self.serverList.append(serverRunner)
 			serverRunner.start()
 
 port = int(raw_input('Enter port # '))
