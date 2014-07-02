@@ -1,36 +1,22 @@
 import threading
 import connection
 import time
-import calendar
 
-class Client:
+class Client(threading.Thread):
 	def __init__(self, serverAddress, uname):
+		threading.Thread.__init__(self)
 		self.serverAddress = serverAddress
 		self.conn = connection.Connection()
 		self.uname = uname
+		self.log = []
+		self.logLock = threading.Condition(threading.Lock())
 	def run(self):
 		self.conn.connect(self.serverAddress)
 		self.conn.send({'type': 'login', 'username': self.uname, 'time': time.asctime(time.gmtime())})
-		printThread = threading.Thread(target = self.printMsg)
-		printThread.start()
 		while True:
-			msg = {'type': 'message',  'username': self.uname, 'text': raw_input(), 'time': time.asctime(time.gmtime())}
-			self.conn.send(msg)
-	def printMsg(self):
-		while True:
-			msgList = self.conn.recv()
-			for msg in msgList:
-				timeStruct = time.strptime(msg['time'])
-				secs = calendar.timegm(timeStruct)
-				localtime = time.localtime(secs)
-				ltimeString = time.strftime('[%I:%M %p] ', localtime)
-				if msg['type'] == 'notification' or msg['type'] == 'loginmsg':
-					print ltimeString + msg['text']
-				elif msg['type'] == 'message':
-					print ltimeString + msg['username'] + ' -- ' + msg['text']
+			msg = self.conn.recv()
+			if msg is not None:
+				with self.logLock:
+					self.log.append(msg)
+					self.logLock.notify()
 
-address = raw_input('Enter server address ')
-port = int(raw_input('Enter port # '))
-uname = raw_input('Enter username ')
-client = Client((address, port), uname)
-client.run()
